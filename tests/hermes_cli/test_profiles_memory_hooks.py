@@ -1,5 +1,5 @@
 """Profile create/rename reach the memory provider the profile selects (agent.memory_provider's
-on_profile_created / on_profile_renamed), best-effort, with that profile's home and secrets bound."""
+on_profile_created / on_profile_renamed), and a provider name is kept free as a profile alias."""
 
 from pathlib import Path
 from unittest.mock import patch
@@ -130,3 +130,10 @@ def test_a_failing_provider_hook_never_fails_create_or_rename(profile_env, monke
     with patch("hermes_cli.profiles.check_alias_collision", return_value="skip"):
         assert rename_profile("work", "play").is_dir()
 
+def test_an_installed_memory_provider_name_is_not_a_free_alias(profile_env, monkeypatch):
+    """A memory provider registers ``hermes <name>``; core no longer hardcodes which names those are."""
+    import plugins.memory as memory_pkg
+    from hermes_cli.profiles import check_alias_collision
+
+    monkeypatch.setattr(memory_pkg, "list_memory_provider_names", lambda: ["somemem"])
+    assert "memory provider" in check_alias_collision("somemem")
